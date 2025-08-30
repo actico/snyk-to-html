@@ -115,6 +115,7 @@ class SnykToHtml {
 
 function metadataForVuln(vuln: any) {
   const { cveSpaced, cveLineBreaks } = concatenateCVEs(vuln);
+  const ignoreData = getIgnoreData(vuln);
 
   return {
     id: vuln.id,
@@ -129,11 +130,13 @@ function metadataForVuln(vuln: any) {
     packageManager: vuln.packageManager,
     version: vuln.version,
     cvssScore: vuln.cvssScore,
+    cveIds: vuln.identifiers?.CVE || [],
     cveSpaced: cveSpaced || 'No CVE found.',
     cveLineBreaks: cveLineBreaks || 'No CVE found.',
     disclosureTime: dateFromDateTimeString(vuln.disclosureTime || ''),
     publicationTime: dateFromDateTimeString(vuln.publicationTime || ''),
     license: vuln.license || undefined,
+    ignoreData: ignoreData || undefined,
   };
 }
 
@@ -154,6 +157,20 @@ function concatenateCVEs(vuln: any) {
 
 function dateFromDateTimeString(dateTimeString: string) {
   return dateTimeString.substr(0, 10);
+}
+
+function getIgnoreData(vuln) {
+  if (!vuln.filtered?.ignored || vuln.filtered?.ignored?.length === 0) {
+    return;
+  }
+  const ignore = vuln.filtered.ignored[0];
+  return {
+    reason: ignore.reason || 'No reason provided',
+    expires: ignore.expires || 'Unknown',
+    created: ignore.created || 'Unknown',
+    source: ignore.source || 'Unknown',
+    path: ignore.path || [],
+  };
 }
 
 function groupVulns(vulns) {
@@ -214,6 +231,17 @@ async function generateTemplate(
     data.upgrades = getUpgrades(upgrade, data.vulnerabilities);
     data.pins = getUpgrades(pin, data.vulnerabilities);
     data.patches = addIssueDataToPatch(patch, data.vulnerabilities);
+  }
+  if (data.filtered?.ignore) {
+    const ignoredVulnsGrouped = groupVulns(data.filtered.ignore);
+    const sortedIgnoredVulns = orderBy(
+      ignoredVulnsGrouped.vulnerabilities,
+      ['metadata.severityValue', 'metadata.name'],
+      ['desc', 'desc'],
+    );
+    data.ignoredVulns = sortedIgnoredVulns || [];
+    data.ignoredVulnsUniqueCount =
+      ignoredVulnsGrouped.vulnerabilitiesUniqueCount;
   }
   const vulnMetadata = groupVulns(data.vulnerabilities);
   const sortedVulns = orderBy(
@@ -278,6 +306,16 @@ async function generateCodeTemplate(
 }
 
 function mergeData(dataArray: any[]): any {
+  const ignoredVulns = dataArray.map((project) => {
+    if (!project.filtered?.ignore) {
+      return [];
+    }
+
+    return project.filtered.ignore.map((ignore) => ({
+      ...ignore,
+    }));
+  });
+
   const vulnsArrays = dataArray.map((project) => {
     if (!project.vulnerabilities) {
       return [];
@@ -312,6 +350,7 @@ function mergeData(dataArray: any[]): any {
   }));
 
   return {
+    ignoredVulns,
     vulnerabilities: aggregateVulnerabilities,
     uniqueCount: totalUniqueCount,
     summary: aggregateVulnerabilities.length + ' vulnerable dependency paths',
