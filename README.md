@@ -131,3 +131,12 @@ For help with the Snyk CLI or Snyk in general, please use the [Snyk support page
 ## Making a new release
 
 Releases are done automatically upon merges to the main branch.
+
+## ACTICO Customizations
+### Ignore Information of Vulnerabilities
+Information about ignored vulnerabilities is added to the data object passed to the template.
+New fields are:
+- `data.ignoredVulns`: List of all ignored vulnerabilities
+- `data.ignoredVulnsCount`: Number of all ignored vulnerabilities
+### Helper
+- `join`: Joins an array of strings with a given separator. Usage: `{{join array ", "}}`
