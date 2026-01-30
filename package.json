@@ -15,7 +15,8 @@
     "report": "mkdir -p output && cat test/fixtures/test-report.json | node dist/. > output/test-report.html && open output/test-report.html",
     "report:cve": "mkdir -p output && cat test/fixtures/test-report.json | node dist/. -t template/test-cve-report.hbs > output/test-report.html && open output/test-report.html",
     "multi-report": "mkdir -p output && cat test/fixtures/multi-test-report.json | node dist/. > output/multi-test-report.html && open output/multi-test-report.html",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "package": "pkg . -t node18-macos-arm64,node18-linux-x64,node18-win-x64 --compress GZip"
   },
   "types": "./dist/index.d.ts",
   "files": [
