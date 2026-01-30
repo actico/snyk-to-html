@@ -22,6 +22,10 @@ program
     'Output of the resulting HTML. Example: -o snyk.html. Defaults to stdout',
   )
   .option(
+    '--appVersion <version>',
+    'Version of the scanned application. Defaults to empty.',
+  )
+  .option(
     '-s, --summary',
     'Generates an HTML with only the summary, instead of the details report',
   )
@@ -79,6 +83,7 @@ SnykToHtml.run(
   source,
   !!options.actionableRemediation,
   template,
+  options.appVersion,
   !!options.summary,
   onReportOutput,
 );
