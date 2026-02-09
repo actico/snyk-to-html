@@ -71,10 +71,17 @@ class SnykToHtml {
     dataSource: string,
     remediation: boolean,
     hbsTemplate: string,
+    appVersion: string,
     summary: boolean,
     reportCallback: (value: string) => void,
   ): void {
-    SnykToHtml.runAsync(dataSource, remediation, hbsTemplate, summary)
+    SnykToHtml.runAsync(
+      dataSource,
+      remediation,
+      hbsTemplate,
+      appVersion,
+      summary,
+    )
       .then(reportCallback)
       .catch(handleInvalidJson);
   }
@@ -83,6 +90,7 @@ class SnykToHtml {
     source: string,
     remediation: boolean,
     template: string,
+    appVersion: string,
     summary: boolean,
   ): Promise<string> {
     const promisedString = source ? readFile(source) : readInputFromStdin();
@@ -103,11 +111,17 @@ class SnykToHtml {
           template === path.join(__dirname, '../../template/test-report.hbs')
             ? path.join(__dirname, '../../template/code/test-report.hbs')
             : template;
-        return processCodeData(data, template, summary);
+        return processCodeData(data, template, appVersion, summary);
       } else if (data.docker) {
-        return processContainerData(data, remediation, template, summary);
+        return processContainerData(
+          data,
+          remediation,
+          template,
+          appVersion,
+          summary,
+        );
       } else {
-        return processData(data, remediation, template, summary);
+        return processData(data, remediation, template, appVersion, summary);
       }
     });
   }
@@ -217,10 +231,12 @@ async function registerPeerPartial(
 
 async function generateTemplate(
   data: any,
+  appVersion: string,
   template: string,
   showRemediation: boolean,
   summary: boolean,
 ): Promise<string> {
+  data.version = appVersion;
   if (showRemediation && data.remediation) {
     data.showRemediations = showRemediation;
     const { upgrade, pin, unresolved, patch } = data.remediation;
@@ -363,10 +379,17 @@ async function processData(
   data: any,
   remediation: boolean,
   template: string,
+  appVersion: string,
   summary: boolean,
 ): Promise<string> {
   const mergedData = Array.isArray(data) ? mergeData(data) : data;
-  return generateTemplate(mergedData, template, remediation, summary);
+  return generateTemplate(
+    mergedData,
+    appVersion,
+    template,
+    remediation,
+    summary,
+  );
 }
 
 async function processIacData(
@@ -413,6 +436,7 @@ async function processIacData(
 async function processCodeData(
   data: any,
   template: string,
+  appVersion: string,
   summary: boolean,
 ): Promise<string> {
   if (data.error) {
@@ -462,6 +486,7 @@ async function processContainerData(
   data: any,
   remediation: boolean,
   template: string,
+  appVersion: string,
   summary: boolean,
 ): Promise<string> {
   if (
@@ -473,7 +498,7 @@ async function processContainerData(
     delete data.applications;
     data = [data, ...AppData];
   }
-  return processData(data, remediation, template, summary);
+  return processData(data, remediation, template, appVersion, summary);
 }
 
 async function readInputFromStdin(): Promise<string> {
