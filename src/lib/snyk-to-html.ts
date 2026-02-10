@@ -248,8 +248,9 @@ async function generateTemplate(
     data.pins = getUpgrades(pin, data.vulnerabilities);
     data.patches = addIssueDataToPatch(patch, data.vulnerabilities);
   }
-  if (data.filtered?.ignore) {
-    const ignoredVulnsGrouped = groupVulns(data.filtered.ignore);
+  if (data.filtered?.ignore || data.ignoredVulns) {
+    const vulnsToIgnore = data.filtered?.ignore || data.ignoredVulns;
+    const ignoredVulnsGrouped = groupVulns(vulnsToIgnore);
     const sortedIgnoredVulns = orderBy(
       ignoredVulnsGrouped.vulnerabilities,
       ['metadata.severityValue', 'metadata.name'],
@@ -322,8 +323,8 @@ async function generateCodeTemplate(
 }
 
 function mergeData(dataArray: any[]): any {
-  const ignoredVulns = dataArray.map((project) => {
-    if (!project.filtered?.ignore) {
+  const ignoredVulns = dataArray.flatMap((project) => {
+    if (!project.filtered?.ignore || project.filtered.ignore.length === 0) {
       return [];
     }
 
