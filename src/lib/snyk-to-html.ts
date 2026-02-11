@@ -366,7 +366,12 @@ function mergeData(dataArray: any[]): any {
     displayTargetFile: project.displayTargetFile,
   }));
 
+  // when multiple projects are scanned, we need to have a list of all scanned
+  // projects to print in the report metadata header
+  const aggregateProjectNames = dataArray.map((project) => project.projectName);
+
   return {
+    projectName: aggregateProjectNames,
     ignoredVulns,
     vulnerabilities: aggregateVulnerabilities,
     uniqueCount: totalUniqueCount,
